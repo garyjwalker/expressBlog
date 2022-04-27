@@ -33,8 +33,6 @@ const postSchema = new mongoose.Schema({
 
 const Post = mongoose.model("Post", postSchema)
 
-let posts = []
-
 app.get("/", function(req, res){
   // Retrieve posts and render home page.
   Post.find({}, (err, posts) => {
