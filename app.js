@@ -36,10 +36,10 @@ const Post = mongoose.model("Post", postSchema)
 let posts = []
 
 app.get("/", function(req, res){
-  res.render("home", {
-    startingContent: homeStartingContent,
-    posts: posts,
-    })
+  // Retrieve posts and render home page.
+  Post.find({}, (err, posts) => {
+    res.render("home", {startingContent: homeStartingContent, posts: posts})
+  })
 })
 
 app.get("/about", function(req, res){
@@ -63,26 +63,36 @@ app.post("/compose", function(req, res){
   post.save((err) => {
     if (!err) {
       console.log("Successfully saved blog post.")
+      res.redirect("/")
     } else {
       console.log("Error: Could not save blog post.")
+      res.redirect("compose")
     }
-    res.redirect("/")
   })
 })
 
-app.get("/posts/:postName", function(req, res){
-  const requestedTitle = _.lowerCase(req.params.postName)
+app.get("/posts/:postID", function(req, res){
+  const requestedPostID = req.params.postID
 
-  posts.forEach(function(post){
-    const storedTitle = _.lowerCase(post.title)
-
-    if (storedTitle === requestedTitle) {
-      res.render("post", {
-        title: post.title,
-        content: post.content
-      })
-    }
-  })
+  // Check if valid mongo id.
+  if (!mongoose.isValidObjectId(requestedPostID)) {
+    res.render("post", {title: "Error", content: "Could not find page."})
+  } else {
+    Post.findById(requestedPostID, (err, post) => {
+      if (err) {
+        // Check if error connecting to server.
+        console.log("Error connecting to server.")
+        console.log(err)
+      } else if (!post) {
+        // See if id belongs to a post.
+        console.log("Error: Could not find post id.")
+        res.render("post", {title: "Error", content: "Could not find page."})
+      } else {
+        // Display post.
+        res.render("post", {title: post.title, content: post.content})
+      }
+    })
+  }
 })
 
 app.listen(3000, function() {
